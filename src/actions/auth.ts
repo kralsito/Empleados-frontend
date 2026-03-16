@@ -6,7 +6,7 @@ import { setAccessToken, clearAccessToken } from '@/lib/auth/session';
 
 export async function loginAction({ email, password }: LoginInput): Promise<Auth> {
   const auth = await login({ email, password });
-  await setAccessToken({ token: auth.token });
+  await setAccessToken({ token: auth.accessToken });
   return auth;
 }
 

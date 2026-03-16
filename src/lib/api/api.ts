@@ -16,10 +16,10 @@ export interface ApiResponse<T> {
   };
 }
 
-export async function apiRequest<T = any>(
+export async function apiRequest<T = unknown>(
   endpoint: string,
   method: HttpMethod = 'GET',
-  body: any = null,
+  body: unknown = null,
   contentType: string = 'application/json',
   requiresAuth: boolean = true
 ): Promise<ApiResponse<T>> {
@@ -46,20 +46,32 @@ export async function apiRequest<T = any>(
   }
 
   if (body) {
-    options.body = contentType === 'application/json' ? JSON.stringify(body) : body;
+    options.body = contentType === 'application/json'
+      ? JSON.stringify(body)
+      : body as BodyInit;
   }
 
   const res = await fetch(url, options);
-  
+
   if (!res.ok) {
-    let errorData: any;
+    let errorData: unknown;
     try {
       errorData = await res.json();
     } catch {
       throw new Error('Error desconocido');
     }
     console.error(errorData);
-    throw new Error(errorData.message || 'Error desconocido');
+
+    if (
+      typeof errorData === 'object' &&
+      errorData !== null &&
+      'message' in errorData &&
+      typeof errorData.message === 'string'
+    ) {
+      throw new Error(errorData.message);
+    }
+
+    throw new Error('Error desconocido');
   }
 
   const isJson = res.headers.get('content-type')?.includes('application/json');
