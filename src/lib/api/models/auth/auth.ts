@@ -1,7 +1,7 @@
 import { User } from "../user/user";
 
 export interface Auth {
-  token: string;
+  accessToken: string;
   user: User;
 } 
 

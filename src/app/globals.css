@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f3f1;
+  --foreground: #111111;
+  --brand-red: #e30613;
+  --brand-black: #000000;
+  --brand-gray: #d8d8d8;
+  --brand-white: #ffffff;
+  --brand-green: #02f3ce;
+  --brand-maroon: #70000b;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-strong: #ffffff;
+  --line-soft: rgba(0, 0, 0, 0.08);
+  --font-body: "Clear Sans", "Segoe UI", Arial, sans-serif;
+  --font-title: var(--font-russo-one), "Arial Black", sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-red: var(--brand-red);
+  --color-brand-black: var(--brand-black);
+  --color-brand-gray: var(--brand-gray);
+  --color-brand-white: var(--brand-white);
+  --color-brand-green: var(--brand-green);
+  --color-brand-maroon: var(--brand-maroon);
+  --font-sans: var(--font-body);
+  --font-russo: var(--font-title);
+  --font-clear-sans: var(--font-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-image:
+    radial-gradient(circle at top left, rgba(227, 6, 19, 0.1), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(2, 243, 206, 0.1), transparent 24%);
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+::selection {
+  background: rgba(227, 6, 19, 0.16);
+  color: var(--brand-black);
 }
