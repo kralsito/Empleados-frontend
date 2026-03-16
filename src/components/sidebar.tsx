@@ -27,6 +27,7 @@ export default function Sidebar() {
     const isDashboard = pathname === '/dashboard';
     const isEmployees = pathname === '/configuracion/empleados';
     const isRoles = pathname === '/configuracion/roles';
+    const isConfigSelected = isEmployees || isRoles;
 
     const linkBase = 'group flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-sm font-semibold';
     const linkState = 'border-white/8 bg-white/4 text-white/80 hover:border-white/14 hover:bg-white/8 hover:text-white';
@@ -85,10 +86,10 @@ export default function Sidebar() {
                 <div className="flex flex-col w-full">
                     <button
                         onClick={() => setIsConfigOpen(!configOpen)}
-                        className={`${linkBase} ${configOpen ? linkActive : linkState} justify-between`}
+                        className={`${linkBase} ${isConfigSelected ? linkActive : linkState} justify-between`}
                     >
                         <div className="flex items-center gap-2">
-                            <SidebarIcon active={configOpen}>
+                            <SidebarIcon active={isConfigSelected}>
                                 <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                                     <path d="M12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5Z" />
                                     <path d="M19.4 13.5a7.9 7.9 0 0 0 .06-1.5l1.6-1.23-1.8-3.11-1.96.53a8.6 8.6 0 0 0-1.28-.75L15.4 4h-3.6l-.62 2.44a8.6 8.6 0 0 0-1.28.75l-1.96-.53-1.8 3.11L7.74 12a7.9 7.9 0 0 0 .06 1.5l-1.6 1.23 1.8 3.11 1.96-.53c.4.3.83.55 1.28.75L11.8 20h3.6l.62-2.44c.45-.2.88-.45 1.28-.75l1.96.53 1.8-3.11z" />
