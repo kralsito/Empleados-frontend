@@ -46,7 +46,9 @@ export async function apiRequest<T = unknown>(
   }
 
   if (body) {
-    options.body = contentType === 'application/json' ? JSON.stringify(body) : body;
+    options.body = contentType === 'application/json'
+      ? JSON.stringify(body)
+      : body as BodyInit;
   }
 
   const res = await fetch(url, options);

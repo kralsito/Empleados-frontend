@@ -1,4 +1,5 @@
 import { getRoles } from '@/lib/api/calls/roles';
+import { Rol } from '@/lib/api/models/role/role';
 import RoleForm from './components/RoleForm';
 
 function getErrorMessage(error: unknown) {
@@ -10,7 +11,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default async function RolesPage() {
-    let roles = [];
+    let roles: Rol[] = [];
     let initialError: string | undefined;
 
     try {
