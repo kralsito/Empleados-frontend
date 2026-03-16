@@ -1,12 +1,15 @@
+import { Rol } from '../role/role';
+
 export interface NuevoEmpleadoInput {
     name: string;
-    lastname: string;
-    isActive: boolean;
+    lastName: string;
+    roleId: number;
 }
 
 export interface Empleado {
     id: number;
     name: string;
-    lastname: string;
-    isActive: boolean;
+    lastName: string;
+    active: boolean;
+    role: Rol;
 }
