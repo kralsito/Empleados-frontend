@@ -16,6 +16,28 @@ export interface ApiResponse<T> {
   };
 }
 
+function getDefaultErrorMessage(status: number): string {
+  if (status === 401) return 'No autorizado. Inicia sesion nuevamente.';
+  if (status === 403) return 'No tienes permisos para realizar esta accion.';
+  if (status === 404) return 'Recurso no encontrado.';
+  if (status >= 500) return 'Error interno del servidor.';
+  return 'Error desconocido';
+}
+
+function extractErrorMessage(errorData: unknown): string | null {
+  if (!errorData || typeof errorData !== 'object') return null;
+
+  if ('message' in errorData && typeof errorData.message === 'string' && errorData.message.trim()) {
+    return errorData.message;
+  }
+
+  if ('error' in errorData && typeof errorData.error === 'string' && errorData.error.trim()) {
+    return errorData.error;
+  }
+
+  return null;
+}
+
 export async function apiRequest<T = unknown>(
   endpoint: string,
   method: HttpMethod = 'GET',
@@ -54,24 +76,28 @@ export async function apiRequest<T = unknown>(
   const res = await fetch(url, options);
 
   if (!res.ok) {
-    let errorData: unknown;
-    try {
-      errorData = await res.json();
-    } catch {
-      throw new Error('Error desconocido');
-    }
-    console.error(errorData);
+    let errorData: unknown = null;
+    const contentTypeHeader = res.headers.get('content-type') ?? '';
 
-    if (
-      typeof errorData === 'object' &&
-      errorData !== null &&
-      'message' in errorData &&
-      typeof errorData.message === 'string'
-    ) {
-      throw new Error(errorData.message);
+    if (contentTypeHeader.includes('application/json')) {
+      try {
+        errorData = await res.json();
+      } catch {
+        errorData = null;
+      }
+    } else {
+      try {
+        const text = await res.text();
+        if (text.trim()) {
+          throw new Error(text);
+        }
+      } catch {
+        // no-op: fallback message below
+      }
     }
 
-    throw new Error('Error desconocido');
+    const apiMessage = extractErrorMessage(errorData);
+    throw new Error(apiMessage ?? getDefaultErrorMessage(res.status));
   }
 
   const isJson = res.headers.get('content-type')?.includes('application/json');
