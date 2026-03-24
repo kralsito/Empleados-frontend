@@ -2,10 +2,11 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { HandleStatus, MockWorklog } from "@/lib/api/mocks/horariosPagosMock";
+import { WorklogDetail, WorklogStatus } from "@/lib/api/models/worklog/worklog";
 import { StatusPill } from "./StatusPill";
+import { WorklogDetailsModal } from "./WorklogDetailsModal";
 
-type WorklogRow = MockWorklog & { status: HandleStatus; remaining: number };
+type WorklogRow = WorklogDetail;
 
 interface WorklogCreateModalProps {
   open: boolean;
@@ -130,7 +131,7 @@ export function WorklogCreateModal({
     return cells;
   }, [viewYear, viewMonth, worklogMap]);
 
-  const getStatusPill = (status: HandleStatus) => {
+  const getStatusPill = (status: WorklogStatus) => {
     if (status === "PAGADO") return <StatusPill label="Pagado" variant="paid" />;
     if (status === "PARCIAL") return <StatusPill label="Parcial" variant="partial" />;
     return <StatusPill label="Pendiente" variant="pending" />;
@@ -191,15 +192,10 @@ export function WorklogCreateModal({
       return;
     }
 
-    if (!description.trim()) {
-      setError("La descripcion es obligatoria.");
-      return;
-    }
-
     setSaving(true);
     try {
       await onSubmit({ date: selectedDate, hours: parsedHours, description: description.trim() });
-      onClose();
+      closeForm();
     } catch (submitError: unknown) {
       if (submitError instanceof Error) {
         setError(submitError.message);
@@ -299,7 +295,7 @@ export function WorklogCreateModal({
 
                 {hasWorklog ? (
                   <div className="mt-2 space-y-1">
-                    <p className="line-clamp-1 text-xs font-medium text-black/70">{cell.worklog?.description}</p>
+                    <p className="line-clamp-1 text-xs font-medium text-black/70">{cell.worklog?.description || "Sin descripcion"}</p>
                     <p className="text-[11px] text-black/55">{formatWorkedTime(cell.worklog?.hours ?? 0)}</p>
                   </div>
                 ) : (
@@ -361,50 +357,11 @@ export function WorklogCreateModal({
           Click en un dia para abrir el modal de carga. Punto rojo = dia con worklog cargado.
         </div>
 
-        {viewWorklog && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
-            <div className="w-full max-w-md rounded-2xl border border-black/15 bg-white p-5 shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
-              <div className="mb-4 flex items-start justify-between">
-                <div>
-                  <h4 className="text-lg font-semibold">Worklog cargado</h4>
-                  <p className="text-sm text-black/60">{viewWorklog.date}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeViewWorklog}
-                  aria-label="Cerrar vista"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-black/65 transition-colors hover:border-black/20 hover:bg-black/5 hover:text-black"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path d="M6 6l12 12" />
-                    <path d="M18 6L6 18" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-3 rounded-xl border border-black/10 bg-black/[0.02] p-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-black/55">Estado</span>
-                  {getStatusPill(viewWorklog.status)}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-black/55">Horas</span>
-                  <span className="font-medium">{formatWorkedTime(viewWorklog.hours)}</span>
-                </div>
-                <div>
-                  <p className="mb-1 text-black/55">Descripcion</p>
-                  <p className="font-medium text-black/80">{viewWorklog.description}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button type="button" onClick={closeViewWorklog} className="rounded-lg border border-black/20 px-3 py-2 text-sm hover:bg-black/5">
-                  Cerrar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <WorklogDetailsModal
+          open={Boolean(viewWorklog)}
+          worklog={viewWorklog}
+          onClose={closeViewWorklog}
+        />
 
         {selectedDate && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
@@ -442,7 +399,7 @@ export function WorklogCreateModal({
                 {selectedDayWorklog && (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm">
                     <div className="mb-1">{getStatusPill(selectedDayWorklog.status)}</div>
-                    <p className="text-amber-800">Este dia ya tiene carga: {selectedDayWorklog.description}</p>
+                    <p className="text-amber-800">Este dia ya tiene carga: {selectedDayWorklog.description || "Sin descripcion"}</p>
                   </div>
                 )}
 
@@ -479,6 +436,7 @@ export function WorklogCreateModal({
                     onChange={(event) => setDescription(event.target.value)}
                     className="min-h-24 rounded-lg border border-black/20 px-3 py-2 text-sm outline-none focus:border-[#e30613]"
                     placeholder="Ej: control de inventario, soporte, atencion al cliente..."
+                    maxLength={180}
                   />
                 </div>
 

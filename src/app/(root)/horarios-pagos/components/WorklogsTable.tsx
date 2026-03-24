@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import { HandleStatus, MockWorklog } from "@/lib/api/mocks/horariosPagosMock";
+import { WorklogDetail, WorklogStatus } from "@/lib/api/models/worklog/worklog";
 import { StatusPill } from "./StatusPill";
 
-type WorklogRow = MockWorklog & { status: HandleStatus; remaining: number };
+type WorklogRow = WorklogDetail;
 
 interface WorklogsTableProps {
   rows: WorklogRow[];
@@ -28,7 +28,7 @@ function formatWorkedTime(hours: number) {
 }
 
 export function WorklogsTable({ rows, emptyLabel, onEditWorklog, onDeleteWorklog }: WorklogsTableProps) {
-  const getStatusPill = (status: HandleStatus) => {
+  const getStatusPill = (status: WorklogStatus) => {
     if (status === "PAGADO") {
       return <StatusPill label="Pagado" variant="paid" />;
     }
@@ -59,7 +59,7 @@ export function WorklogsTable({ rows, emptyLabel, onEditWorklog, onDeleteWorklog
           {rows.map((worklog) => (
             <tr key={worklog.id} className="border-b border-black/10 transition-colors hover:bg-[#fff5f6]">
               <td className="px-3 py-2">{worklog.date}</td>
-              <td className="px-3 py-2 font-medium">{worklog.description}</td>
+              <td className="px-3 py-2 font-medium">{worklog.description || "Sin descripcion"}</td>
               <td className="px-3 py-2 text-black/70">{formatWorkedTime(worklog.hours)}</td>
               <td className="px-3 py-2 font-semibold text-black/75">{formatCurrency(worklog.amount)}</td>
               <td className="px-3 py-2 text-emerald-700">{formatCurrency(worklog.paidAmount)}</td>

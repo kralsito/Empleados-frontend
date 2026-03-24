@@ -1,38 +1,38 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  applyPayment,
-  createWorklog,
-  deleteWorklog,
-  getPaymentsForEmployee,
-  getWorklogsForEmployee,
-  listEmployees,
-  MockEmployee,
-  MockPayment,
-  MockWorklog,
-  HandleStatus,
-  updateWorklog,
-} from "@/lib/api/mocks/horariosPagosMock";
+  actualizarWorklogAction,
+  aplicarPagoAction,
+  buscarPagosEmpleadoAction,
+  crearWorklogAction,
+  eliminarWorklogAction,
+  obtenerEmpleadoHorariosAction,
+} from "@/actions/horarios-pagos";
+import { Empleado } from "@/lib/api/models/employee/employee";
+import { PaymentDetail } from "@/lib/api/models/payment/payment";
+import { WorklogDetail } from "@/lib/api/models/worklog/worklog";
+import { useToast } from "@/components/ui/toast-provider";
 import { PaymentModal } from "../components/PaymentModal";
 import { PaymentsHistoryTable } from "../components/PaymentsHistoryTable";
 import { WorklogCreateModal } from "../components/WorklogCreateModal";
 import { WorklogDeleteModal } from "../components/WorklogDeleteModal";
+import { WorklogDetailsModal } from "../components/WorklogDetailsModal";
 import { WorklogEditModal } from "../components/WorklogEditModal";
 import { WorklogsTable } from "../components/WorklogsTable";
 import { WorklogTabs } from "../components/WorklogTabs";
 
-type WorklogRow = MockWorklog & { status: HandleStatus; remaining: number };
+type WorklogRow = WorklogDetail;
 
 export default function EmployeeHorariosPage() {
   const params = useParams<{ employeeId: string }>();
   const employeeId = Number(params.employeeId);
 
-  const [employee, setEmployee] = useState<MockEmployee | null>(null);
+  const [employee, setEmployee] = useState<Empleado | null>(null);
   const [worklogs, setWorklogs] = useState<WorklogRow[]>([]);
-  const [payments, setPayments] = useState<MockPayment[]>([]);
+  const [payments, setPayments] = useState<PaymentDetail[]>([]);
   const [tab, setTab] = useState<"pending" | "paid">("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +44,12 @@ export default function EmployeeHorariosPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingWorklog, setDeletingWorklog] = useState<WorklogRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewWorklogModalOpen, setViewWorklogModalOpen] = useState(false);
+  const [viewingWorklog, setViewingWorklog] = useState<WorklogRow | null>(null);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const { showToast } = useToast();
 
   const loadData = useCallback(async () => {
     if (!Number.isFinite(employeeId)) {
@@ -55,38 +61,33 @@ export default function EmployeeHorariosPage() {
     setLoading(true);
     setError(null);
 
-    try {
-      const [employeeList, employeeWorklogs, employeePayments] = await Promise.all([
-        listEmployees(),
-        getWorklogsForEmployee(employeeId),
-        getPaymentsForEmployee(employeeId),
-      ]);
-
-      const selectedEmployee = employeeList.find((current) => current.id === employeeId) ?? null;
-      setEmployee(selectedEmployee);
-      setWorklogs(employeeWorklogs);
-      setPayments(employeePayments);
-
-      if (!selectedEmployee) {
-        setError("No se encontro el empleado solicitado.");
-      }
-    } catch (loadError: unknown) {
-      if (loadError instanceof Error) {
-        setError(loadError.message);
-      } else {
-        setError("No se pudieron cargar los datos del empleado.");
-      }
-    } finally {
+    const result = await obtenerEmpleadoHorariosAction(employeeId);
+    if (!result.success || !result.data) {
+      setEmployee(null);
+      setWorklogs([]);
+      setPayments([]);
+      setError(result.error ?? "No se pudieron cargar los datos del empleado.");
       setLoading(false);
+      return;
     }
+
+    setEmployee(result.data.employee);
+    setWorklogs(result.data.worklogs);
+    setPayments(result.data.payments);
+
+    if (!result.data.employee) {
+      setError("No se encontro el empleado solicitado.");
+    }
+
+    setLoading(false);
   }, [employeeId]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [loadData]);
 
   useEffect(() => {
-    const shouldLockScroll = modalOpen || worklogModalOpen || editModalOpen || deleteModalOpen;
+    const shouldLockScroll = modalOpen || worklogModalOpen || editModalOpen || deleteModalOpen || viewWorklogModalOpen;
     if (!shouldLockScroll) {
       return;
     }
@@ -97,7 +98,7 @@ export default function EmployeeHorariosPage() {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [modalOpen, worklogModalOpen, editModalOpen, deleteModalOpen]);
+  }, [modalOpen, worklogModalOpen, editModalOpen, deleteModalOpen, viewWorklogModalOpen]);
 
   const pendingWorklogs = useMemo(() => worklogs.filter((worklog) => worklog.status !== "PAGADO"), [worklogs]);
   const paidWorklogs = useMemo(() => worklogs.filter((worklog) => worklog.status === "PAGADO"), [worklogs]);
@@ -108,31 +109,116 @@ export default function EmployeeHorariosPage() {
   const totalBilled = useMemo(() => worklogs.reduce((acc, worklog) => acc + worklog.amount, 0), [worklogs]);
   const totalPaid = useMemo(() => worklogs.reduce((acc, worklog) => acc + worklog.paidAmount, 0), [worklogs]);
 
-  const handleApplyPayment = async (input: { date: string; amount: number; complete: boolean }) => {
-    await applyPayment({
+  const handleApplyPayment = async (input: {
+    date: string;
+    amount: number;
+    complete: boolean;
+    paymentMethod: "EFECTIVO" | "TRANSFERENCIA" | "COMBINADO";
+    paymentProof: string | null;
+  }) => {
+    const result = await aplicarPagoAction({
       employeeId,
       date: input.date,
       amount: input.amount,
       complete: input.complete,
+      paymentMethod: input.paymentMethod,
+      paymentProof: input.paymentProof,
     });
 
+    if (!result.success) {
+      showToast({ type: "error", title: "No se pudo aplicar el pago", description: result.error ?? "Intenta nuevamente." });
+      throw new Error(result.error ?? "No se pudo aplicar el pago.");
+    }
+
+    showToast({ type: "success", title: "Pago aplicado con exito" });
     await loadData();
   };
 
+  const handleFilterPayments = async () => {
+    if ((fromDate && !toDate) || (!fromDate && toDate)) {
+      setError("Para filtrar por periodo debes completar ambas fechas.");
+      showToast({ type: "error", title: "Filtro incompleto", description: "Completa ambas fechas para filtrar." });
+      return;
+    }
+
+    if (fromDate && toDate && fromDate > toDate) {
+      setError("La fecha desde no puede ser mayor a la fecha hasta.");
+      showToast({ type: "error", title: "Rango invalido", description: "Revisa las fechas del filtro." });
+      return;
+    }
+
+    setPaymentsLoading(true);
+    setError(null);
+
+    const result = await buscarPagosEmpleadoAction(employeeId, fromDate && toDate ? { from: fromDate, to: toDate } : undefined);
+    if (!result.success || !result.data) {
+      setPaymentsLoading(false);
+      setError(result.error ?? "No se pudo filtrar el historial de pagos.");
+      showToast({ type: "error", title: "No se pudo filtrar pagos", description: result.error ?? "Intenta nuevamente." });
+      return;
+    }
+
+    setPayments(result.data);
+    showToast({ type: "info", title: "Filtro aplicado", description: `${result.data.length} pagos encontrados.` });
+    setPaymentsLoading(false);
+  };
+
+  const handleClearPaymentsFilter = async () => {
+    setFromDate("");
+    setToDate("");
+    setPaymentsLoading(true);
+    setError(null);
+
+    const result = await buscarPagosEmpleadoAction(employeeId);
+    if (!result.success || !result.data) {
+      setPaymentsLoading(false);
+      setError(result.error ?? "No se pudo recargar el historial de pagos.");
+      showToast({ type: "error", title: "No se pudo recargar pagos", description: result.error ?? "Intenta nuevamente." });
+      return;
+    }
+
+    setPayments(result.data);
+    showToast({ type: "info", title: "Filtro limpiado" });
+    setPaymentsLoading(false);
+  };
+
   const handleCreateWorklog = async (input: { date: string; hours: number; description: string }) => {
-    await createWorklog({
+    const result = await crearWorklogAction({
       employeeId,
       date: input.date,
-      hours: input.hours,
       description: input.description,
+      hoursWorked: input.hours,
     });
 
+    if (!result.success) {
+      showToast({ type: "error", title: "No se pudo crear el worklog", description: result.error ?? "Intenta nuevamente." });
+      throw new Error(result.error ?? "No se pudo crear el worklog.");
+    }
+
     setTab("pending");
+    showToast({ type: "success", title: "Worklog cargado con exito" });
     await loadData();
   };
 
   const handleUpdateWorklog = async (input: { worklogId: number; hours: number; description: string }) => {
-    await updateWorklog(input);
+    const worklogToUpdate = worklogs.find((worklog) => worklog.id === input.worklogId);
+    if (!worklogToUpdate) {
+      throw new Error("No se encontro el worklog a editar.");
+    }
+
+    const result = await actualizarWorklogAction(input.worklogId, {
+      employeeId,
+      date: worklogToUpdate.date,
+      description: input.description,
+      hoursWorked: input.hours,
+    });
+
+    if (!result.success) {
+      showToast({ type: "error", title: "No se pudo editar el worklog", description: result.error ?? "Intenta nuevamente." });
+      throw new Error(result.error ?? "No se pudo actualizar el worklog.");
+    }
+
+    showToast({ type: "success", title: "Worklog actualizado con exito" });
     await loadData();
   };
 
@@ -148,11 +234,18 @@ export default function EmployeeHorariosPage() {
 
   const handleDeleteWorklog = async () => {
     if (!deletingWorklog) return;
+
     setDeleting(true);
     try {
-      await deleteWorklog({ worklogId: deletingWorklog.id });
+      const result = await eliminarWorklogAction(deletingWorklog.id, employeeId);
+      if (!result.success) {
+        showToast({ type: "error", title: "No se pudo borrar el worklog", description: result.error ?? "Intenta nuevamente." });
+        throw new Error(result.error ?? "No se pudo eliminar el worklog.");
+      }
+
       setDeleteModalOpen(false);
       setDeletingWorklog(null);
+      showToast({ type: "success", title: "Worklog borrado con exito" });
       await loadData();
     } finally {
       setDeleting(false);
@@ -191,7 +284,7 @@ export default function EmployeeHorariosPage() {
             Volver al listado
           </Link>
           <h1 className="font-russo text-3xl tracking-[0.08em] text-black">{employee.name} {employee.lastName}</h1>
-          <p className="text-sm text-black/60">Rol: {employee.role}</p>
+          <p className="text-sm text-black/60">Rol: {employee.role.name}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -253,7 +346,24 @@ export default function EmployeeHorariosPage() {
         <WorklogsTable rows={paidWorklogs} emptyLabel="No hay worklogs pagados para este empleado." />
       )}
 
-      <PaymentsHistoryTable payments={payments} />
+      <PaymentsHistoryTable
+        payments={payments}
+        worklogs={worklogs}
+        fromDate={fromDate}
+        toDate={toDate}
+        loading={paymentsLoading}
+        onFromDateChange={setFromDate}
+        onToDateChange={setToDate}
+        onApplyFilter={handleFilterPayments}
+        onClearFilter={handleClearPaymentsFilter}
+        onOpenWorklog={(worklogId) => {
+          const target = worklogs.find((worklog) => worklog.id === worklogId);
+          if (!target) return;
+
+          setViewingWorklog(target);
+          setViewWorklogModalOpen(true);
+        }}
+      />
 
       <PaymentModal
         open={modalOpen}
@@ -265,24 +375,22 @@ export default function EmployeeHorariosPage() {
         key={worklogModalKey}
         open={worklogModalOpen}
         employeeName={`${employee.name} ${employee.lastName}`}
-        roleName={employee.role}
-        salaryHour={employee.salaryHour}
+        roleName={employee.role.name}
+        salaryHour={Number(employee.role.salaryHour)}
         existingWorklogs={worklogs}
         onClose={() => setWorklogModalOpen(false)}
         onSubmit={handleCreateWorklog}
         onRequestEdit={(worklog) => {
-          setWorklogModalOpen(false);
           handleOpenEdit(worklog);
         }}
         onRequestDelete={(worklog) => {
-          setWorklogModalOpen(false);
           handleOpenDelete(worklog);
         }}
       />
       <WorklogEditModal
         key={`${selectedWorklog?.id ?? "none"}-${editModalOpen ? "open" : "closed"}`}
         open={editModalOpen}
-        salaryHour={employee.salaryHour}
+        salaryHour={Number(employee.role.salaryHour)}
         worklog={selectedWorklog}
         onClose={() => {
           setEditModalOpen(false);
@@ -299,6 +407,14 @@ export default function EmployeeHorariosPage() {
           setDeletingWorklog(null);
         }}
         onConfirm={handleDeleteWorklog}
+      />
+      <WorklogDetailsModal
+        open={viewWorklogModalOpen}
+        worklog={viewingWorklog}
+        onClose={() => {
+          setViewWorklogModalOpen(false);
+          setViewingWorklog(null);
+        }}
       />
     </main>
   );

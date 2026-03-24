@@ -1,13 +1,20 @@
-﻿"use client";
+"use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { MetodoPago } from "@/lib/api/models/payment/payment";
 
 interface PaymentModalProps {
   open: boolean;
   pendingTotal: number;
   onClose: () => void;
-  onSubmit: (input: { date: string; amount: number; complete: boolean }) => Promise<void>;
+  onSubmit: (input: {
+    date: string;
+    amount: number;
+    complete: boolean;
+    paymentMethod: MetodoPago;
+    paymentProof: string | null;
+  }) => Promise<void>;
 }
 
 type PaymentType = "COMPLETO" | "PARCIAL";
@@ -24,10 +31,22 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentModalProps) {
   const [paymentType, setPaymentType] = useState<PaymentType>("COMPLETO");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getTodayISODate());
+  const [paymentMethod, setPaymentMethod] = useState<MetodoPago>("TRANSFERENCIA");
+  const [paymentProof, setPaymentProof] = useState<string | null>(null);
+  const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -41,6 +60,10 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
     if (open) {
       setPaymentType("COMPLETO");
       setAmount("");
+      setDate(getTodayISODate());
+      setPaymentMethod("TRANSFERENCIA");
+      setPaymentProof(null);
+      setProofFileName(null);
       setError(null);
     }
   }, [open]);
@@ -56,6 +79,34 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
   if (!open || !mounted) {
     return null;
   }
+
+  const handleProofChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setPaymentProof(null);
+      setProofFileName(null);
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("El comprobante no puede superar 2 MB.");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const encoded = await fileToDataUrl(file);
+      setPaymentProof(encoded);
+      setProofFileName(file.name);
+      setError(null);
+    } catch (fileError: unknown) {
+      if (fileError instanceof Error) {
+        setError(fileError.message);
+      } else {
+        setError("No se pudo adjuntar el comprobante.");
+      }
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -87,11 +138,16 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
         date,
         amount: currentAmount,
         complete: paymentType === "COMPLETO",
+        paymentMethod,
+        paymentProof,
       });
 
       setAmount("");
       setPaymentType("COMPLETO");
       setDate(getTodayISODate());
+      setPaymentMethod("TRANSFERENCIA");
+      setPaymentProof(null);
+      setProofFileName(null);
       onClose();
     } catch (submitError: unknown) {
       if (submitError instanceof Error) {
@@ -172,6 +228,34 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
             />
             {paymentType === "COMPLETO" && (
               <p className="text-xs text-black/60">En modo completo se paga automaticamente todo lo pendiente.</p>
+            )}
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="paymentMethod" className="text-sm font-medium">Metodo</label>
+            <select
+              id="paymentMethod"
+              value={paymentMethod}
+              onChange={(event) => setPaymentMethod(event.target.value as MetodoPago)}
+              className="rounded-lg border border-black/20 px-3 py-2 text-sm outline-none focus:border-[#e30613]"
+            >
+              <option value="TRANSFERENCIA">Transferencia</option>
+              <option value="EFECTIVO">Efectivo</option>
+              <option value="COMBINADO">Combinado</option>
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="paymentProof" className="text-sm font-medium">Comprobante (opcional)</label>
+            <input
+              id="paymentProof"
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleProofChange}
+              className="rounded-lg border border-black/20 px-3 py-2 text-sm outline-none file:mr-3 file:rounded-md file:border-0 file:bg-black/10 file:px-2.5 file:py-1 file:text-xs file:font-semibold hover:file:bg-black/20"
+            />
+            {proofFileName && (
+              <p className="text-xs text-black/60">Adjuntado: {proofFileName}</p>
             )}
           </div>
 

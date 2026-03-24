@@ -6,6 +6,7 @@ import {
     crearRolAction,
     eliminarRolAction,
 } from '@/actions/roles';
+import { useToast } from '@/components/ui/toast-provider';
 import { Rol } from '@/lib/api/models/role/role';
 
 type RoleFormProps = {
@@ -171,6 +172,7 @@ export default function RoleForm({ initialRoles, initialError }: RoleFormProps) 
     const [feedback, setFeedback] = useState<string | null>(initialError ?? null);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const [isPending, startTransition] = useTransition();
+    const { showToast } = useToast();
 
     function openCreateModal() {
         setMode('create');
@@ -245,6 +247,7 @@ export default function RoleForm({ initialRoles, initialError }: RoleFormProps) 
 
             if (!result.success) {
                 setFeedback(result.error ?? 'No se pudo guardar el rol.');
+                showToast({ type: 'error', title: 'No se pudo guardar el rol', description: result.error ?? 'Intenta nuevamente.' });
                 return;
             }
 
@@ -256,6 +259,7 @@ export default function RoleForm({ initialRoles, initialError }: RoleFormProps) 
             setSelectedRole(null);
             setForm(emptyForm);
             setFeedback(null);
+            showToast({ type: 'success', title: mode === 'create' ? 'Rol cargado con exito' : 'Rol actualizado con exito' });
         });
     }
 
@@ -275,11 +279,13 @@ export default function RoleForm({ initialRoles, initialError }: RoleFormProps) 
             if (!result.success) {
                 setFeedback(result.error ?? 'No se pudo eliminar el rol.');
                 setPendingDeleteId(null);
+                showToast({ type: 'error', title: 'No se pudo borrar el rol', description: result.error ?? 'Intenta nuevamente.' });
                 return;
             }
 
             setRoles((current) => current.filter((item) => item.id !== role.id));
             setPendingDeleteId(null);
+            showToast({ type: 'success', title: 'Rol borrado con exito' });
         });
     }
 

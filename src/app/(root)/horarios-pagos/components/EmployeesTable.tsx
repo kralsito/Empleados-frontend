@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { MockEmployee } from "@/lib/api/mocks/horariosPagosMock";
+import { Empleado } from "@/lib/api/models/employee/employee";
 import { StatusPill } from "./StatusPill";
 
 interface EmployeesTableProps {
-  employees: MockEmployee[];
+  employees: Empleado[];
 }
 
 export function EmployeesTable({ employees }: EmployeesTableProps) {
@@ -26,9 +26,9 @@ export function EmployeesTable({ employees }: EmployeesTableProps) {
             <tr key={employee.id} className="border-b border-black/10 transition-colors hover:bg-[#fff5f6]">
               <td className="px-3 py-2 font-semibold text-black/75">#{employee.id}</td>
               <td className="px-3 py-2 font-medium">{employee.name} {employee.lastName}</td>
-              <td className="px-3 py-2 text-black/70">{employee.role}</td>
+              <td className="px-3 py-2 text-black/70">{employee.role.name}</td>
               <td className="px-3 py-2">
-                <StatusPill label="Activo" variant="paid" />
+                <StatusPill label={employee.active ? "Activo" : "Inactivo"} variant={employee.active ? "paid" : "info"} />
               </td>
               <td className="px-3 py-2">
                 <Link

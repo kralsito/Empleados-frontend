@@ -1,9 +1,9 @@
 ﻿"use client";
 
 import { createPortal } from "react-dom";
-import { HandleStatus, MockWorklog } from "@/lib/api/mocks/horariosPagosMock";
+import { WorklogDetail } from "@/lib/api/models/worklog/worklog";
 
-type WorklogRow = MockWorklog & { status: HandleStatus; remaining: number };
+type WorklogRow = WorklogDetail;
 
 interface WorklogDeleteModalProps {
   open: boolean;
@@ -37,7 +37,7 @@ export function WorklogDeleteModal({ open, worklog, loading = false, onClose, on
 
         <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.03] p-3 text-sm">
           <p className="font-semibold">{worklog.date}</p>
-          <p className="text-black/70">{worklog.description}</p>
+          <p className="text-black/70">{worklog.description || "Sin descripcion"}</p>
           <p className="mt-1 text-black/60">{formatWorkedTime(worklog.hours)}</p>
         </div>
 

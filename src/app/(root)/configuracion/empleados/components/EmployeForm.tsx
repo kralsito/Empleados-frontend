@@ -7,6 +7,7 @@ import {
     eliminarEmpleadoAction,
 } from '@/actions/empleados';
 import { crearRolAction } from '@/actions/roles';
+import { useToast } from '@/components/ui/toast-provider';
 import { Empleado, NuevoEmpleadoInput } from '@/lib/api/models/employee/employee';
 import { Rol } from '@/lib/api/models/role/role';
 
@@ -449,6 +450,7 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const [isPending, startTransition] = useTransition();
     const [isRoleCreatorPending, startRoleCreatorTransition] = useTransition();
+    const { showToast } = useToast();
 
     function openCreateModal() {
         setMode('create');
@@ -553,6 +555,7 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
 
             if (!result.success || !result.data) {
                 setRoleCreatorError(result.error ?? 'No se pudo crear el rol.');
+                showToast({ type: 'error', title: 'No se pudo crear el rol', description: result.error ?? 'Intenta nuevamente.' });
                 return;
             }
 
@@ -562,6 +565,7 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
             setRoleCreatorOpen(false);
             setRoleCreatorForm(emptyRoleForm);
             setRoleCreatorError(null);
+            showToast({ type: 'success', title: 'Rol cargado con exito' });
         });
     }
 
@@ -599,6 +603,7 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
 
             if (!result.success) {
                 setFeedback(result.error ?? 'No se pudo guardar el empleado.');
+                showToast({ type: 'error', title: 'No se pudo guardar el empleado', description: result.error ?? 'Intenta nuevamente.' });
                 return;
             }
 
@@ -610,6 +615,7 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
             setSelectedEmployee(null);
             setForm(emptyForm);
             setFeedback(null);
+            showToast({ type: 'success', title: mode === 'create' ? 'Empleado cargado con exito' : 'Empleado actualizado con exito' });
         });
     }
 
@@ -629,11 +635,13 @@ export default function EmployeForm({ initialEmployees, roles, initialError }: E
             if (!result.success) {
                 setFeedback(result.error ?? 'No se pudo eliminar el empleado.');
                 setPendingDeleteId(null);
+                showToast({ type: 'error', title: 'No se pudo borrar el empleado', description: result.error ?? 'Intenta nuevamente.' });
                 return;
             }
 
             setEmployees((current) => current.filter((item) => item.id !== employee.id));
             setPendingDeleteId(null);
+            showToast({ type: 'success', title: 'Empleado borrado con exito' });
         });
     }
 

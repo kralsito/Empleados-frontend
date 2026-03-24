@@ -2,9 +2,9 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { HandleStatus, MockWorklog } from "@/lib/api/mocks/horariosPagosMock";
+import { WorklogDetail } from "@/lib/api/models/worklog/worklog";
 
-type WorklogRow = MockWorklog & { status: HandleStatus; remaining: number };
+type WorklogRow = WorklogDetail;
 
 interface WorklogEditModalProps {
   open: boolean;
@@ -59,11 +59,6 @@ export function WorklogEditModal({ open, salaryHour, worklog, onClose, onSubmit 
 
     if (Number(workedHours) === 24 && workedMinutes !== "00") {
       setError("El maximo diario es 24h 00m.");
-      return;
-    }
-
-    if (!description.trim()) {
-      setError("La descripcion es obligatoria.");
       return;
     }
 
@@ -146,6 +141,7 @@ export function WorklogEditModal({ open, salaryHour, worklog, onClose, onSubmit 
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               className="min-h-24 rounded-lg border border-black/20 px-3 py-2 text-sm outline-none focus:border-[#e30613]"
+              maxLength={180}
             />
           </div>
 

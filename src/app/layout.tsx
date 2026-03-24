@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Russo_One } from "next/font/google";
+import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
 
 const russoOne = Russo_One({
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${russoOne.variable} antialiased`}>
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
