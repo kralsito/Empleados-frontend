@@ -2,14 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { getEmpleados } from '@/lib/api/calls/employee';
-import { applyPayment, getPaymentsByEmployee } from '@/lib/api/calls/payment';
+import { applyPayment, AplicarPagoFormInput, getPaymentsByEmployee } from '@/lib/api/calls/payment';
 import {
     createWorklog,
     deleteWorklog,
     getWorklogDetailsByEmployee,
     updateWorklog,
 } from '@/lib/api/calls/worklog';
-import { AplicarPagoInput } from '@/lib/api/models/payment/payment';
 import { NuevoWorklogInput } from '@/lib/api/models/worklog/worklog';
 
 function getErrorMessage(error: unknown) {
@@ -71,7 +70,7 @@ export async function buscarPagosEmpleadoAction(
     }
 }
 
-export async function aplicarPagoAction(data: AplicarPagoInput) {
+export async function aplicarPagoAction(data: AplicarPagoFormInput) {
     try {
         const resultado = await applyPayment(data);
         revalidateHorariosPagos(data.employeeId);

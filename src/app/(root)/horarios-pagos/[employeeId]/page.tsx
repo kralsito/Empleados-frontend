@@ -114,7 +114,7 @@ export default function EmployeeHorariosPage() {
     amount: number;
     complete: boolean;
     paymentMethod: "EFECTIVO" | "TRANSFERENCIA" | "COMBINADO";
-    paymentProof: string | null;
+    paymentProof: File | null;
   }) => {
     const result = await aplicarPagoAction({
       employeeId,

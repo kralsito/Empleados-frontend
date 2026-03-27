@@ -1,9 +1,28 @@
 import 'server-only';
 import { apiRequest } from '../api';
-import { AplicarPagoInput, AplicarPagoResult, PaymentDetail } from '../models/payment/payment';
+import { AplicarPagoResult, PaymentDetail } from '../models/payment/payment';
 
-export async function applyPayment(data: AplicarPagoInput): Promise<AplicarPagoResult> {
-    const response = await apiRequest<AplicarPagoResult>('/payments/apply', 'POST', data);
+export interface AplicarPagoFormInput {
+    employeeId: number;
+    date: string;
+    amount: number;
+    complete: boolean;
+    paymentMethod: string;
+    paymentProof?: File | null;
+}
+
+export async function applyPayment(data: AplicarPagoFormInput): Promise<AplicarPagoResult> {
+    const form = new FormData();
+    form.append('employeeId', String(data.employeeId));
+    form.append('date', data.date);
+    form.append('amount', String(data.amount));
+    form.append('complete', String(data.complete));
+    form.append('paymentMethod', data.paymentMethod);
+    if (data.paymentProof) {
+        form.append('paymentProof', data.paymentProof);
+    }
+
+    const response = await apiRequest<AplicarPagoResult>('/payments/apply', 'POST', form, 'multipart/form-data');
 
     if (!response.data) {
         throw new Error('Error al aplicar el pago en la API');

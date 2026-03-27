@@ -24,14 +24,6 @@ export interface PaymentDetail {
     assignedWorklogs: PaymentAllocation[];
 }
 
-export interface AplicarPagoInput {
-    employeeId: number;
-    date: string;
-    amount: number;
-    complete: boolean;
-    paymentMethod: MetodoPago;
-    paymentProof?: string | null;
-}
 
 export interface AplicarPagoResult {
     payment: PaymentDetail;

@@ -13,7 +13,7 @@ interface PaymentModalProps {
     amount: number;
     complete: boolean;
     paymentMethod: MetodoPago;
-    paymentProof: string | null;
+    paymentProof: File | null;
   }) => Promise<void>;
 }
 
@@ -31,21 +31,13 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
-    reader.readAsDataURL(file);
-  });
-}
 
 export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentModalProps) {
   const [paymentType, setPaymentType] = useState<PaymentType>("COMPLETO");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getTodayISODate());
   const [paymentMethod, setPaymentMethod] = useState<MetodoPago>("TRANSFERENCIA");
-  const [paymentProof, setPaymentProof] = useState<string | null>(null);
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -80,7 +72,7 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
     return null;
   }
 
-  const handleProofChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  const handleProofChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       setPaymentProof(null);
@@ -88,24 +80,15 @@ export function PaymentModal({ open, pendingTotal, onClose, onSubmit }: PaymentM
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("El comprobante no puede superar 2 MB.");
+    if (file.size > 5 * 1024 * 1024) {
+      setError("El comprobante no puede superar 5 MB.");
       event.target.value = "";
       return;
     }
 
-    try {
-      const encoded = await fileToDataUrl(file);
-      setPaymentProof(encoded);
-      setProofFileName(file.name);
-      setError(null);
-    } catch (fileError: unknown) {
-      if (fileError instanceof Error) {
-        setError(fileError.message);
-      } else {
-        setError("No se pudo adjuntar el comprobante.");
-      }
-    }
+    setPaymentProof(file);
+    setProofFileName(file.name);
+    setError(null);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {

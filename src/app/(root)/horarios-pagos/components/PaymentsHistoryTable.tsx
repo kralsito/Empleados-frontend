@@ -6,6 +6,7 @@ import { PaymentDetail } from "@/lib/api/models/payment/payment";
 import { WorklogDetail } from "@/lib/api/models/worklog/worklog";
 import { StatusPill } from "./StatusPill";
 
+
 interface PaymentsHistoryTableProps {
   payments: PaymentDetail[];
   worklogs: WorklogDetail[];
@@ -137,7 +138,7 @@ function PaymentDetailsModal({
           <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.02] p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-black/50">Comprobante</p>
             <a
-              href={payment.paymentProof}
+              href={`http://localhost:8080${payment.paymentProof}`}
               target="_blank"
               rel="noreferrer"
               className="group inline-flex w-full items-center justify-between rounded-lg border border-black/10 bg-white p-2 text-left hover:bg-black/[0.02]"
@@ -147,7 +148,7 @@ function PaymentDetailsModal({
                   PDF
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-black/75">Comprobante PDF</p>
+                  <p className="text-sm font-semibold text-black/75">Comprobante</p>
                   <p className="text-xs text-black/55">Abrir en nueva pestaña</p>
                 </div>
               </div>
@@ -278,7 +279,7 @@ export function PaymentsHistoryTable({
               <td className="px-3 py-2">
                 {payment.paymentProof ? (
                   <a
-                    href={payment.paymentProof}
+                    href={`http://localhost:8080${payment.paymentProof}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs font-semibold text-[#e30613] hover:underline"
