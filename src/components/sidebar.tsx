@@ -25,6 +25,7 @@ export default function Sidebar() {
 
     const configOpen = isConfigOpen || pathname.startsWith('/configuracion');
     const isDashboard = pathname === '/dashboard';
+    const isHorariosPagos = pathname.startsWith('/horarios-pagos');
     const isEmployees = pathname === '/configuracion/empleados';
     const isRoles = pathname === '/configuracion/roles';
     const isConfigSelected = isEmployees || isRoles;
@@ -34,7 +35,7 @@ export default function Sidebar() {
     const linkActive = 'border-[#e30613]/40 bg-[#e30613] text-white shadow-[0_16px_34px_rgba(227,6,19,0.28)]';
 
     return (
-        <aside className="w-full border-b border-black/8 bg-black px-4 py-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] lg:h-screen lg:w-72 lg:border-b-0 lg:border-r lg:border-r-white/8 lg:px-5 lg:py-6">
+        <aside className="w-full border-b border-black/8 bg-black px-4 py-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-r-white/8 lg:px-5 lg:py-6">
             <div className="flex h-full flex-col gap-6">
                 <div className="flex items-center gap-3 rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e30613] shadow-[0_18px_34px_rgba(227,6,19,0.35)]">
@@ -68,17 +69,17 @@ export default function Sidebar() {
                 </Link>
 
                 <Link
-                    href="/horas"
-                    className={`${linkBase} ${linkState}`}
+                    href="/horarios-pagos"
+                    className={`${linkBase} ${isHorariosPagos ? linkActive : linkState}`}
                 >
-                    <SidebarIcon>
+                    <SidebarIcon active={isHorariosPagos}>
                         <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                             <circle cx="12" cy="12" r="8.5" />
                             <path d="M12 8v4.5l3 2" />
                         </svg>
                     </SidebarIcon>
                     <div className="flex flex-col">
-                        <span>Cargar horas</span>
+                        <span>Horarios y Pagos</span>
                         <span className="text-xs font-medium opacity-65">Registro diario</span>
                     </div>
                 </Link>
