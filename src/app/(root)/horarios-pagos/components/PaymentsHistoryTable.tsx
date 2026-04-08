@@ -138,7 +138,7 @@ function PaymentDetailsModal({
           <div className="mt-4 rounded-xl border border-black/10 bg-black/[0.02] p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-black/50">Comprobante</p>
             <a
-              href={`http://localhost:8080${payment.paymentProof}`}
+              href={`http://localhost:8080/payments/${payment.id}/proof`}
               target="_blank"
               rel="noreferrer"
               className="group inline-flex w-full items-center justify-between rounded-lg border border-black/10 bg-white p-2 text-left hover:bg-black/[0.02]"
@@ -279,7 +279,7 @@ export function PaymentsHistoryTable({
               <td className="px-3 py-2">
                 {payment.paymentProof ? (
                   <a
-                    href={`http://localhost:8080${payment.paymentProof}`}
+                    href={`http://localhost:8080/payments/${payment.id}/proof`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs font-semibold text-[#e30613] hover:underline"
