@@ -1,8 +1,10 @@
 "use client"; // Obligatorio para poder usar 'useState' y hacer el botón clickeable
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { logoutAction } from '@/actions/auth';
+import type { CurrentUser } from '@/lib/auth/session';
 
 function SidebarIcon({
     children,
@@ -18,14 +20,17 @@ function SidebarIcon({
     );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ currentUser }: { currentUser: CurrentUser }) {
     // Esta es "la memoria" de nuestro componente. Arranca en falso (cerrado).
     const [isConfigOpen, setIsConfigOpen] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
+    const isAdmin = currentUser.role === 'ADMIN';
 
     const configOpen = isConfigOpen || pathname.startsWith('/configuracion');
     const isDashboard = pathname === '/dashboard';
     const isHorariosPagos = pathname.startsWith('/horarios-pagos');
+    const isUsers = pathname === '/admin/usuarios';
     const isEmployees = pathname === '/configuracion/empleados';
     const isRoles = pathname === '/configuracion/roles';
     const isConfigSelected = isEmployees || isRoles;
@@ -33,6 +38,11 @@ export default function Sidebar() {
     const linkBase = 'group flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-sm font-semibold';
     const linkState = 'border-white/8 bg-white/4 text-white/80 hover:border-white/14 hover:bg-white/8 hover:text-white';
     const linkActive = 'border-[#e30613]/40 bg-[#e30613] text-white shadow-[0_16px_34px_rgba(227,6,19,0.28)]';
+
+    async function handleLogout() {
+        await logoutAction();
+        router.push('/');
+    }
 
     return (
         <aside className="w-full border-b border-black/8 bg-black px-4 py-5 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] lg:sticky lg:top-0 lg:h-screen lg:w-72 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-r-white/8 lg:px-5 lg:py-6">
@@ -53,38 +63,58 @@ export default function Sidebar() {
                 </div>
 
                 <nav className="flex flex-col gap-2">
-                <Link
-                    href="/dashboard"
-                    className={`${linkBase} ${isDashboard ? linkActive : linkState}`}
-                >
-                    <SidebarIcon active={isDashboard}>
-                        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                            <path d="M4.5 12.5h6V19h-6zM13.5 5h6v14h-6zM4.5 5h6v4h-6z" />
-                        </svg>
-                    </SidebarIcon>
-                    <div className="flex flex-col">
-                        <span>Dashboard</span>
-                        <span className="text-xs font-medium opacity-65">Resumen operativo</span>
-                    </div>
-                </Link>
+                {isAdmin ? (
+                    <Link
+                        href="/admin/usuarios"
+                        className={`${linkBase} ${isUsers ? linkActive : linkState}`}
+                    >
+                        <SidebarIcon active={isUsers}>
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                <path d="M16 19a4 4 0 0 0-8 0" />
+                                <circle cx="12" cy="10" r="3.2" />
+                                <path d="M18 8v5" />
+                                <path d="M20.5 10.5h-5" />
+                            </svg>
+                        </SidebarIcon>
+                        <div className="flex flex-col">
+                            <span>Usuarios</span>
+                            <span className="text-xs font-medium opacity-65">Alta de cuentas</span>
+                        </div>
+                    </Link>
+                ) : (
+                    <>
+                    <Link
+                        href="/dashboard"
+                        className={`${linkBase} ${isDashboard ? linkActive : linkState}`}
+                    >
+                        <SidebarIcon active={isDashboard}>
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                <path d="M4.5 12.5h6V19h-6zM13.5 5h6v14h-6zM4.5 5h6v4h-6z" />
+                            </svg>
+                        </SidebarIcon>
+                        <div className="flex flex-col">
+                            <span>Dashboard</span>
+                            <span className="text-xs font-medium opacity-65">Resumen operativo</span>
+                        </div>
+                    </Link>
 
-                <Link
-                    href="/horarios-pagos"
-                    className={`${linkBase} ${isHorariosPagos ? linkActive : linkState}`}
-                >
-                    <SidebarIcon active={isHorariosPagos}>
-                        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                            <circle cx="12" cy="12" r="8.5" />
-                            <path d="M12 8v4.5l3 2" />
-                        </svg>
-                    </SidebarIcon>
-                    <div className="flex flex-col">
-                        <span>Horarios y Pagos</span>
-                        <span className="text-xs font-medium opacity-65">Registro diario</span>
-                    </div>
-                </Link>
+                    <Link
+                        href="/horarios-pagos"
+                        className={`${linkBase} ${isHorariosPagos ? linkActive : linkState}`}
+                    >
+                        <SidebarIcon active={isHorariosPagos}>
+                            <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                                <circle cx="12" cy="12" r="8.5" />
+                                <path d="M12 8v4.5l3 2" />
+                            </svg>
+                        </SidebarIcon>
+                        <div className="flex flex-col">
+                            <span>Horarios y Pagos</span>
+                            <span className="text-xs font-medium opacity-65">Registro diario</span>
+                        </div>
+                    </Link>
 
-                <div className="flex flex-col w-full">
+                    <div className="flex flex-col w-full">
                     <button
                         onClick={() => setIsConfigOpen(!configOpen)}
                         className={`${linkBase} ${isConfigSelected ? linkActive : linkState} justify-between`}
@@ -138,8 +168,24 @@ export default function Sidebar() {
                             </Link>
                         </div>
                     )}
-                </div>
+                    </div>
+                    </>
+                )}
                 </nav>
+
+                <div className="mt-auto flex flex-col gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{currentUser.email}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/55">{currentUser.role}</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="rounded-2xl border border-white/10 px-3 py-2 text-sm font-semibold text-white/78 hover:border-white/18 hover:bg-white/8 hover:text-white"
+                    >
+                        Cerrar sesion
+                    </button>
+                </div>
             </div>
         </aside>
     );
