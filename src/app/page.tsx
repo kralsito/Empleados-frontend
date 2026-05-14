@@ -17,8 +17,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await loginAction({ email, password });
-      router.push('/dashboard');
+      const auth = await loginAction({ email, password });
+      router.push(auth.user.role === 'ADMIN' ? '/admin/usuarios' : '/dashboard');
     } catch {
       setError('Credenciales inválidas. Intentá de nuevo.');
     } finally {
